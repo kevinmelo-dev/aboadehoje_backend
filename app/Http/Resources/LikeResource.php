@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Models\User;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class LikeResource extends JsonResource
@@ -15,6 +14,6 @@ class LikeResource extends JsonResource
      */
     public function toArray($request)
     {
-        return User::query()->where('id', $this->user_id)->get(['username', 'avatar']);
+        return new AuthorResource($this->user);
     }
 }

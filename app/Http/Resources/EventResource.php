@@ -2,9 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Models\Event;
-use App\Models\Like;
-use App\Models\User;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class EventResource extends JsonResource
@@ -36,9 +33,9 @@ class EventResource extends JsonResource
             'category' => $this->category,
             'likes' => [
                 'count' => LikeResource::collection($this->likes)->count(),
-                'users' => LikeResource::collection($this->likes),
+                'who_liked' => LikeResource::collection($this->likes),
             ],
-            'author' => AuthorResource::collection(User::query()->where('id', $this->user_id)->get()),
+            'author' => new AuthorResource($this->user),
         ];
     }
 }
