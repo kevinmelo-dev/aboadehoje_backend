@@ -24,8 +24,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // Autenticação
     Route::post('/auth/verify', [AuthController::class, 'verify']);
+    Route::post('/auth/upload', [AuthController::class, 'upload_picture']);
+    Route::put('/auth/update', [AuthController::class, 'update']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
-    Route::post('/auth/update', [AuthController::class, 'update']);
 
     // Usuários
     Route::get('/{username}', [UserController::class, 'getUserProfile']);
@@ -34,7 +35,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('events/{id}', [\App\Http\Controllers\Api\EventController::class, 'show'])->where('id', '[0-9]+');
     Route::get('events/{method}', [\App\Http\Controllers\Api\EventController::class, 'index']);
     Route::post('events/create', [\App\Http\Controllers\Api\EventController::class, 'store']);
-    Route::post('events/edit/{id}', [\App\Http\Controllers\Api\EventController::class, 'update']);
+    Route::put('events/edit/{id}', [\App\Http\Controllers\Api\EventController::class, 'update']);
     Route::delete('events/{id}', [\App\Http\Controllers\Api\EventController::class, 'destroy']);
 
     // Likes

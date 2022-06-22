@@ -3,37 +3,23 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\User;
-use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\RegisterUserRequest;
 use App\Http\Requests\LoginUserRequest;
 use Hash;
+use Illuminate\Support\Facades\Response;
 use Twilio\Rest\Client;
 
 class AuthController extends Controller
 {
-    use ApiResponser;
-
     public function register(RegisterUserRequest $request)
     {
         $req = $request->all();
-
-        // Manipula senha
         $req['password'] = Hash::make($req['password']);
 
-        // Manipula avatar
-        if($request->hasFile('avatar'))
-        {
-            $file = $req['avatar'];
-            $extension = $file->getClientOriginalExtension();
-            $filename = time().'.'.$extension;
-            $file->move('uploads/users/', $filename);
-            $req['avatar'] = $filename;
-        }
-
-        // Manipula número de telefone
+        // Verificação de telefone
         $token = getenv("TWILIO_AUTH_TOKEN");
         $twilio_sid = getenv("TWILIO_SID");
         $twilio_verify_sid = getenv("TWILIO_VERIFY_SID");
@@ -43,38 +29,35 @@ class AuthController extends Controller
             ->create($req['phone'], "sms");
 
         $user = User::create($req);
+        $token = $user->createToken('API Token')->plainTextToken;
+        return Response::json(['success' => true, 'user' => $user, 'token' => $token], 201);
+    }
 
-        return $this->success(
-            [
-            'user' => $user,
-            'token' => $user->createToken('API Token')->plainTextToken
-            ],
-            "Usuário registrado com sucesso.",
-            201
-        );
-
+    public function upload_picture(Request $request)
+    {
+        $user = Auth::user();
+        if($request->hasFile('avatar'))
+        {
+            $file = $request['avatar'];
+            $extension = $file->getClientOriginalExtension();
+            $filename = time().'.'.$extension;
+            $file->move('uploads/users/', $filename);
+            $user['avatar'] = $filename;
+        }
+        $user->save();
+        return Response::json(['success' => true, 'user' => $user], 200);
     }
 
     public function login(LoginUserRequest $request)
     {
         $req = $request->all();
-
         if (Auth::attempt($req)) {
             $user = Auth::user();
-            return $this->success(
-                [
-                'user' => $user,
-                'token' => $user->createToken('API Token')->plainTextToken
-                ],
-                "Usuário logado com sucesso.",
-                200
-            );
+            $token = $user->createToken('API Token')->plainTextToken;
+            return Response::json(['success' => true, 'user' => $user, 'token' => $token], 201);
+        } else {
+            return Response::json(['success' => false, 'error' => 'Credenciais incorretas.'], 401);
         }
-
-        else {
-            return $this->error('Credenciais incorretas.', 401);
-        }
-
     }
 
     public function logout()
@@ -93,25 +76,8 @@ class AuthController extends Controller
     {
         $req = $request->all();
         $user = Auth::user();
-        if($request->hasFile('avatar'))
-        {
-            $file = $req['avatar'];
-            $extension = $file->getClientOriginalExtension();
-            $filename = time().'.'.$extension;
-            $file->move('uploads/users/', $filename);
-            $req['avatar'] = $filename;
-        }
-
         $user->update($req);
-
-
-        return $this->success(
-            [
-                'user' => $user,
-            ],
-            "Usuário atualizado com sucesso.",
-            200
-        );
+        return Response::json(['success' => true, 'user' => $user], 200);
     }
 
     protected function verify(Request $request)
@@ -131,11 +97,9 @@ class AuthController extends Controller
         if ($verification->valid) {
             $user = tap(User::where('phone', $data['phone']))->update(['isVerified' => true]);
             /* Authenticate user */
-            return $this->success(
-                "Número de telefone verificado com sucesso.",
-                200
-            );
+            return Response::json(['success' => true], 200);
+        } else {
+            return back()->with(['phone' => $data['phone'], 'error' => 'O código inserido é inválido.']);
         }
-        return back()->with(['phone' => $data['phone'], 'error' => 'O código inserido é inválido.']);
     }
 }

@@ -7,6 +7,7 @@ use App\Http\Requests\EventRequest;
 use App\Http\Resources\EventResource;
 use App\Models\Event;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
 
 class EventController extends Controller
@@ -38,7 +39,7 @@ class EventController extends Controller
         if($data->isEmpty())
             return Response::json(['success' => false, 'error' => 'Evento não encontrado.'], 404);
         else
-            return Response::json(['success' => true, 'events' => $data], 200);
+            return Response::json(['success' => true, 'event' => $data], 200);
     }
 
     public function store(EventRequest $request)
@@ -55,30 +56,25 @@ class EventController extends Controller
         }
 
         $req['user_id'] = Auth::user()->id;
-        $event = Event::create($req);
+        $event = new EventResource(Event::create($req));
 
-        return new EventResource($event);
+        return Response::json(['success' => true, 'event' => $event], 201);
     }
 
-    public function update(EventRequest $request, $id)
+    public function update(Request $request, $id)
     {
-        $event = Event::where('user_id', Auth::user()->id)->where('id', $id)->first();
-
+        $user_id = Auth::user()['id'];
+        $event = Event::query()->where('id', $id)->first();
         if($event) {
-            $req = $request->all();
-            if($request->hasFile('image'))
-            {
-                $file = $req['image'];
-                $extension = $file->getClientOriginalExtension();
-                $filename = time().'.'.$extension;
-                $file->move('uploads/events/', $filename);
-                $req['image'] = $filename;
+            if ($event['user_id'] == $user_id) {
+                $req = $request->all();
+                $event->update($req);
+                return Response::json(['success' => true, 'event' => new EventResource($event)], 200);
+            } else {
+                return Response::json(['success' => false, 'error' => 'Você não tem autorização para essa ação.'], 403);
             }
-            $event->update($req);
-
-            return new EventResource($event);
         } else {
-            return Response::json(['success' => false, 'error' => 'Você não tem autorização para essa ação.'], 403);
+            return Response::json(['success' => false, 'error' => 'Evento não encontrado.'], 404);
         }
     }
 
@@ -92,7 +88,7 @@ class EventController extends Controller
             if ($event['user_id'] == $user_id)
             {
                 $event->delete();
-                return Response::json(['success' => true, 'message' => 'Evento deletado com sucesso.'], 200);
+                return Response::json(['success' => true], 200);
             }
             else
             {
@@ -105,7 +101,4 @@ class EventController extends Controller
         }
     }
 
-    private function success(array $array, string $string, int $int)
-    {
-    }
 }
