@@ -35,6 +35,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('events/{id}', [\App\Http\Controllers\Api\EventController::class, 'show'])->where('id', '[0-9]+');
     Route::get('events/{method}', [\App\Http\Controllers\Api\EventController::class, 'index']);
     Route::post('events/create', [\App\Http\Controllers\Api\EventController::class, 'store']);
+    Route::post('events/upload/{id}', [\App\Http\Controllers\Api\EventController::class, 'upload_image']);
     Route::put('events/edit/{id}', [\App\Http\Controllers\Api\EventController::class, 'update']);
     Route::delete('events/{id}', [\App\Http\Controllers\Api\EventController::class, 'destroy']);
 

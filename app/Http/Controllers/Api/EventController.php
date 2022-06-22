@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Response;
 
 class EventController extends Controller
 {
-    // Próximos eventos
     public function index($method)
     {
         $model = new Event();
@@ -61,6 +60,30 @@ class EventController extends Controller
         return Response::json(['success' => true, 'event' => $event], 201);
     }
 
+    public function upload_image(Request $request, $id)
+    {
+        $user_id = Auth::user()['id'];
+        $event = Event::query()->where('id', $id)->first();
+        if($event) {
+            if ($event['user_id'] == $user_id) {
+                if($request->hasFile('image'))
+                {
+                    $file = $request['image'];
+                    $extension = $file->getClientOriginalExtension();
+                    $filename = time().'.'.$extension;
+                    $file->move('uploads/events/', $filename);
+                    $event['image'] = $filename;
+                }
+                $event->save();
+                return Response::json(['success' => true, 'event' => new EventResource($event)], 200);
+            } else {
+                return Response::json(['success' => false, 'error' => 'Você não tem autorização para essa ação.'], 403);
+            }
+        } else {
+            return Response::json(['success' => false, 'error' => 'Evento não encontrado.'], 404);
+        }
+    }
+
     public function update(Request $request, $id)
     {
         $user_id = Auth::user()['id'];
@@ -100,5 +123,4 @@ class EventController extends Controller
             return Response::json(['success' => false, 'error' => 'Evento não encontrado.'], 404);
         }
     }
-
 }
