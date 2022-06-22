@@ -54,7 +54,7 @@ class AuthController extends Controller
         if (Auth::attempt($req)) {
             $user = Auth::user();
             $token = $user->createToken('API Token')->plainTextToken;
-            return Response::json(['success' => true, 'user' => $user, 'token' => $token], 201);
+            return Response::json(['success' => true, 'user' => $user, 'token' => $token], 200);
         } else {
             return Response::json(['success' => false, 'error' => 'Credenciais incorretas.'], 401);
         }
@@ -63,13 +63,7 @@ class AuthController extends Controller
     public function logout()
     {
         Auth::user()->tokens()->delete();
-
-        return $this->success(
-            [
-            ],
-            "Usuário desconectado com sucesso.",
-            200
-        );
+        return Response::json(['success' => true], 200);
     }
 
     public function update(Request $request)
