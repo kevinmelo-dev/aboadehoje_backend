@@ -41,4 +41,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // Likes
     Route::post('events/like/{id}', [\App\Http\Controllers\Api\LikeController::class, 'index']);
+
+    // Busca
+    Route::post('/e/search', [\App\Http\Controllers\Api\EventController::class, 'search_event']);
 });

@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\EventRequest;
+use App\Http\Resources\AuthorResource;
 use App\Http\Resources\EventResource;
+use App\Http\Resources\UserResource;
 use App\Models\Event;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
@@ -122,5 +125,34 @@ class EventController extends Controller
         {
             return Response::json(['success' => false, 'error' => 'Evento não encontrado.'], 404);
         }
+    }
+
+    public function search_event(Request $request){
+        $keyword = $request->keyword;
+
+        $eventquery = Event::query()
+            ->where('title', 'LIKE', "%$keyword%")
+            ->orwhere('about', 'LIKE', "%$keyword%")
+            ->orwhere('local', 'LIKE', "%$keyword%")
+            ->get();
+
+        $events = EventResource::collection($eventquery);
+
+        $userquery = User::query()
+            ->where('username', 'LIKE', "%$keyword%")
+            ->get();
+
+        $users = AuthorResource::collection($userquery);
+
+
+        if(count($events)==0 && count($users)==0){
+            return Response::json(['success' => false, 'error' => 'Nenhum resultado encontrado.'], 404);
+        } else if(count($events)==0){
+            return Response::json(['success' => true, 'users' => $users], 200);
+        } else if(count($users)==0){
+            return Response::json(['success' => true, 'events' => $events], 200);
+        }
+
+        return Response::json(['success' => true, 'events' => $events, 'users' => $users], 200);
     }
 }
